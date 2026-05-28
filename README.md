@@ -64,12 +64,7 @@ npm install
 npm run dev
 4️⃣ Build for production
 npm run build
-🌐 Deployment
 
-The application is deployed using Netlify:
-
-👉 Live Demo
-[text](https://inventorydashbord.netlify.app/)
 
 📄 License
 
