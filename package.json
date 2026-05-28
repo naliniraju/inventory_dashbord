@@ -1,5 +1,5 @@
 {
-  "name": "hr-recruitment-tutorial",
+  "name": "iventory_dashboard",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",
+    "file-saver": "^2.0.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "toastify-js": "^1.12.0"
+    "toastify-js": "^1.12.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
