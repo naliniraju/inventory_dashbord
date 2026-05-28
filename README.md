@@ -56,7 +56,7 @@ inventory-dashboard/
 └── README.md
 ⚙️ Installation & Setup
 1️⃣ Clone the repository
-git clone https://github.com/naliniraju/inventory-dashboard.git
+git clone https://github.com/naliniraju/inventory_dashbord
 cd inventory-dashboard
 2️⃣ Install dependencies
 npm install
