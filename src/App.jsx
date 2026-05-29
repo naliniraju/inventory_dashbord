@@ -653,64 +653,1394 @@ return (
 }
 
 // ─── ATTENDANCE PAGE ───────────────────────────────────────────────────────
+// function AttendancePage({ onMenuOpen }) {
+//   const [loading, setLoading] = useState(false);
+//   const [username, setUsername] = useState("");
+//   const [password, setPassword] = useState("");
+//   const [attendanceData, setAttendanceData] = useState([]);
+//   const [allUsersData, setAllUsersData] = useState([]);
+//   const [loggedInUser, setLoggedInUser] = useState(null);
+//   const [isSuperUser, setIsSuperUser] = useState(false);
+//   const [isAdmin, setIsAdmin] = useState(false);
 
+//   const [selectedMonth, setSelectedMonth] = useState(() => {
+//     const now = new Date();
+//     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+//   });
 
+//   useEffect(() => {
+//     if (!loggedInUser) return;
+//     fetchAttendanceData();
+//     if (isSuperUser || isAdmin) fetchAllUsersData();
+//     const interval = setInterval(() => {
+//       fetchAttendanceData();
+//       if (isSuperUser || isAdmin) fetchAllUsersData();
+//     }, 30000);
+//     return () => clearInterval(interval);
+//   }, [loggedInUser, isSuperUser, isAdmin]);
+
+//   const fetchAttendanceData = async () => {
+//     if (!loggedInUser) return;
+//     const { data } = await supabase
+//       .from("Attendance")
+//       .select("*")
+//       .eq("name", loggedInUser)
+//       .order("login_time", { ascending: false });
+//     setAttendanceData(data || []);
+//   };
+
+//   const fetchAllUsersData = async () => {
+//     const { data } = await supabase
+//       .from("Attendance")
+//       .select("*")
+//       .order("date", { ascending: false });
+//     setAllUsersData(data || []);
+//   };
+
+//   const handleAttLogin = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+
+//     const { data: userInfo, error: authError } = await supabase
+//       .rpc("check_user_credentials", { p_username: username, p_password: password });
+
+//     if (authError || !userInfo) {
+//       Toastify({ text: "Invalid credentials", style: { background: "#dc3545" } }).showToast();
+//       setLoading(false);
+//       return;
+//     }
+
+//     const superUser = userInfo.role === "superuser";
+//     setIsSuperUser(superUser);
+
+//     const adminUser = username.toLowerCase() === "havelyninc";
+//     setIsAdmin(adminUser);
+
+//     if (!superUser) {
+//       const { data: activeSession } = await supabase
+//         .from("Attendance")
+//         .select("id")
+//         .eq("name", username)
+//         .is("logout_time", null)
+//         .maybeSingle();
+
+//       if (activeSession) {
+//         Toastify({ text: "Session already active.", style: { background: "#ff9500" } }).showToast();
+//       } else {
+//         await supabase.from("Attendance").insert([{
+//           name: username,
+//           date: new Date().toISOString().split("T")[0],
+//           login_time: new Date().toISOString(),
+//         }]);
+//         Toastify({ text: "Clocked in!", style: { background: "#28a745" } }).showToast();
+//       }
+//     }
+
+//     setLoggedInUser(username);
+//     setLoading(false);
+//   };
+
+//   const handleLogout = async (name) => {
+//     setLoading(true);
+//     const { data: session } = await supabase
+//       .from("Attendance")
+//       .select("id")
+//       .eq("name", name)
+//       .is("logout_time", null)
+//       .maybeSingle();
+//     if (session) {
+//       await supabase
+//         .from("Attendance")
+//         .update({ logout_time: new Date().toISOString() })
+//         .eq("id", session.id);
+//       fetchAttendanceData();
+//       if (isSuperUser || isAdmin) fetchAllUsersData();
+//       Toastify({ text: "Clocked out!", style: { background: "#28a745" } }).showToast();
+//     }
+//     setLoading(false);
+//   };
+
+//   const handleSignOut = () => {
+//     setLoggedInUser(null);
+//     setIsSuperUser(false);
+//     setIsAdmin(false);
+//     setAttendanceData([]);
+//     setAllUsersData([]);
+//     setUsername("");
+//     setPassword("");
+//   };
+
+//   const userStats = useMemo(() => {
+//     const stats = {};
+//     const todayStr = new Date().toISOString().split("T")[0];
+//     attendanceData.forEach((row) => {
+//       if (!row.logout_time) return;
+//       const hours = (new Date(row.logout_time) - new Date(row.login_time)) / 3600000;
+//       if (!stats[row.name]) stats[row.name] = { today: 0, monthly: 0 };
+//       if (row.date === todayStr) stats[row.name].today += hours;
+//       stats[row.name].monthly += hours;
+//     });
+//     return stats;
+//   }, [attendanceData]);
+
+//   const exportMyData = () => {
+//     if (attendanceData.length === 0) {
+//       Toastify({ text: "No data to export!", style: { background: "#dc3545" } }).showToast();
+//       return;
+//     }
+//     const rows = attendanceData.map((row) => {
+//       const login = new Date(row.login_time);
+//       const logout = row.logout_time ? new Date(row.logout_time) : null;
+//       return {
+//         Name: row.name,
+//         Date: row.date,
+//         "Login Time": login.toLocaleTimeString(),
+//         "Logout Time": logout ? logout.toLocaleTimeString() : "Working...",
+//         "Total Hours Worked": logout ? ((logout - login) / 3600000).toFixed(2) : "In Progress",
+//         Status: logout ? "Present" : "Working",
+//       };
+//     });
+//     const ws = XLSX.utils.json_to_sheet(rows);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "My Attendance");
+//     XLSX.writeFile(wb, `Attendance_${loggedInUser}_${new Date().toLocaleDateString()}.xlsx`);
+//   };
+
+//   const exportAllData = () => {
+//     if (allUsersData.length === 0) {
+//       Toastify({ text: "No data to export!", style: { background: "#dc3545" } }).showToast();
+//       return;
+//     }
+//     const rows = allUsersData.map((row) => {
+//       const login = new Date(row.login_time);
+//       const logout = row.logout_time ? new Date(row.logout_time) : null;
+//       return {
+//         Name: row.name,
+//         Date: row.date,
+//         "Login Time": login.toLocaleTimeString(),
+//         "Logout Time": logout ? logout.toLocaleTimeString() : "Working...",
+//         "Total Hours Worked": logout ? ((logout - login) / 3600000).toFixed(2) : "In Progress",
+//         Status: logout ? "Present" : "Working",
+//       };
+//     });
+//     const ws = XLSX.utils.json_to_sheet(rows);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "All Attendance");
+//     XLSX.writeFile(wb, `All_Users_Attendance_${new Date().toLocaleDateString()}.xlsx`);
+//   };
+
+//   const adminMonthData = useMemo(() => {
+//     return allUsersData.filter((row) => row.date && row.date.startsWith(selectedMonth));
+//   }, [allUsersData, selectedMonth]);
+
+//   // ── KEY CHANGE: one row per user, active sessions counted up to click time ──
+//   const exportAdminMonthData = () => {
+//     if (adminMonthData.length === 0) {
+//       Toastify({ text: "No data for this month!", style: { background: "#dc3545" } }).showToast();
+//       return;
+//     }
+
+//     const now = new Date(); // snapshot at exact click time
+
+//     const userTotals = {};
+//     adminMonthData.forEach((row) => {
+//       const login  = new Date(row.login_time);
+//       const logout = row.logout_time ? new Date(row.logout_time) : now; // active = up to now
+//       const hours  = (logout - login) / 3600000;
+
+//       if (!userTotals[row.name]) {
+//         userTotals[row.name] = { totalHours: 0, sessions: 0, hasActive: false };
+//       }
+//       userTotals[row.name].totalHours += hours;
+//       userTotals[row.name].sessions   += 1;
+//       if (!row.logout_time) userTotals[row.name].hasActive = true;
+//     });
+
+//     const rows = Object.entries(userTotals).map(([name, data]) => ({
+//       Name:                 name,
+//       Month:                selectedMonth,
+//       "Total Sessions":     data.sessions,
+//       "Total Hours Worked": data.totalHours.toFixed(2),
+//       "Note": data.hasActive
+//         ? `Includes live session (as of ${now.toLocaleTimeString()})`
+//         : "All sessions completed",
+//     }));
+
+//     const ws = XLSX.utils.json_to_sheet(rows);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Attendance Summary");
+//     XLSX.writeFile(wb, `Attendance_Summary_${selectedMonth}.xlsx`);
+//   };
+
+//   const activeSessions = useMemo(
+//     () => allUsersData.filter((r) => !r.logout_time),
+//     [allUsersData]
+//   );
+
+//   const ClockedInBadge = ({ name }) => (
+//     <div style={{
+//       display: "flex", flexDirection: "column",
+//       alignItems: "center", justifyContent: "center",
+//       gap: "14px", padding: "28px 20px",
+//     }}>
+//       <svg width="110" height="110" viewBox="0 0 110 110"
+//         xmlns="http://www.w3.org/2000/svg" style={{ overflow: "visible" }}>
+//         <style>{`
+//           @keyframes att-ring-spin {
+//             0%   { stroke-dashoffset: 251; }
+//             60%  { stroke-dashoffset: 0; }
+//             100% { stroke-dashoffset: 0; }
+//           }
+//           @keyframes att-check-draw {
+//             0%   { stroke-dashoffset: 60; opacity: 0; }
+//             40%  { opacity: 0; }
+//             100% { stroke-dashoffset: 0; opacity: 1; }
+//           }
+//           @keyframes att-pulse-ring {
+//             0%   { r: 46; opacity: 0.6; }
+//             100% { r: 58; opacity: 0; }
+//           }
+//           @keyframes att-icon-pop {
+//             0%   { transform: scale(0.7); opacity: 0; }
+//             70%  { transform: scale(1.08); opacity: 1; }
+//             100% { transform: scale(1); opacity: 1; }
+//           }
+//           @keyframes att-badge-float {
+//             0%, 100% { transform: translateY(0px); }
+//             50%       { transform: translateY(-5px); }
+//           }
+//           .att-badge-group {
+//             animation: att-badge-float 3s ease-in-out infinite;
+//             transform-origin: 55px 55px;
+//           }
+//           .att-icon-pop {
+//             animation: att-icon-pop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.5s both;
+//             transform-origin: 55px 55px;
+//           }
+//         `}</style>
+//         <circle cx="55" cy="55" r="46"
+//           fill="none" stroke="#28a745" strokeWidth="2" opacity="0"
+//           style={{ animation: "att-pulse-ring 2s ease-out 0.8s infinite" }}
+//         />
+//         <g className="att-badge-group">
+//           <circle cx="55" cy="55" r="46" fill="#e8f5e9" />
+//           <circle cx="55" cy="55" r="40"
+//             fill="none" stroke="#28a745" strokeWidth="5"
+//             strokeLinecap="round"
+//             strokeDasharray="251" strokeDashoffset="251"
+//             transform="rotate(-90 55 55)"
+//             style={{ animation: "att-ring-spin 1.2s cubic-bezier(0.4,0,0.2,1) 0.1s forwards" }}
+//           />
+//           <circle cx="55" cy="55" r="32" fill="#28a745" className="att-icon-pop" />
+//           <polyline points="38,55 50,67 72,43"
+//             fill="none" stroke="#fff" strokeWidth="5"
+//             strokeLinecap="round" strokeLinejoin="round"
+//             strokeDasharray="60" strokeDashoffset="60"
+//             style={{ animation: "att-check-draw 0.5s ease-out 0.9s forwards" }}
+//           />
+//         </g>
+//       </svg>
+//       <div style={{ textAlign: "center" }}>
+//         <div style={{ fontWeight: "700", fontSize: "16px", color: "#155724", letterSpacing: "0.3px" }}>
+//           ✅ Clocked In
+//         </div>
+//         <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>
+//           Welcome back, <strong>{name}</strong>
+//         </div>
+//         <div style={{
+//           marginTop: "8px", fontSize: "12px",
+//           background: "#d4edda", color: "#155724",
+//           borderRadius: "20px", padding: "4px 14px", display: "inline-block",
+//         }}>
+//           Session active 🟢
+//         </div>
+//       </div>
+//     </div>
+//   );
+
+//   return (
+//     <div className="page active">
+//       <Topbar title="Attendance" onMenuOpen={onMenuOpen} className="glossy-container" />
+//       <div style={{ padding: "20px" }}>
+
+//         {/* ════ NOT LOGGED IN ════ */}
+//         {!loggedInUser && (
+//           <div className="glossy-container" style={{ maxWidth: "400px", margin: "40px auto" }}>
+//             <h3 style={{ marginTop: 0 }}>Clock In</h3>
+//             <form onSubmit={handleAttLogin} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+//               <input
+//                 className="input-field" placeholder="Username" value={username}
+//                 onChange={(e) => setUsername(e.target.value)} required
+//               />
+//               <input
+//                 type="password" className="input-field" placeholder="Password" value={password}
+//                 onChange={(e) => setPassword(e.target.value)} required
+//               />
+//               <button type="submit" className="btn-primary" disabled={loading}>
+//                 {loading ? "Please wait..." : "Mark Attendance"}
+//               </button>
+//             </form>
+//           </div>
+//         )}
+
+//         {/* ════ NORMAL USER VIEW ════ */}
+//         {loggedInUser && !isSuperUser && (
+//           <>
+//             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+//               <span>👤 Logged in as <strong>{loggedInUser}</strong></span>
+//               <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
+//             </div>
+
+//             {/* Badge + Summary — hidden for admin */}
+//             {!isAdmin && (
+//               <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "20px" }}>
+//                 <div className="glossy-container" style={{
+//                   flex: "1", minWidth: "300px",
+//                   display: "flex", alignItems: "center", justifyContent: "center",
+//                 }}>
+//                   <ClockedInBadge name={loggedInUser} />
+//                 </div>
+//                 <div className="glossy-container" style={{ flex: "1", minWidth: "300px" }}>
+//                   <h3 style={{ marginTop: 0 }}>My Summary</h3>
+//                   <button onClick={exportMyData} className="btn-secondary"
+//                     style={{ width: "100%", marginBottom: "10px" }}>
+//                     Export My Data 📊
+//                   </button>
+//                   <div className="table-scroll">
+//                     <table>
+//                       <thead>
+//                         <tr><th>Name</th><th>Today</th><th>Monthly</th></tr>
+//                       </thead>
+//                       <tbody>
+//                         {Object.entries(userStats).length > 0
+//                           ? Object.entries(userStats).map(([name, data]) => (
+//                               <tr key={name}>
+//                                 <td>{name}</td>
+//                                 <td>{data.today.toFixed(1)}h</td>
+//                                 <td>{data.monthly.toFixed(1)}h</td>
+//                               </tr>
+//                             ))
+//                           : (
+//                             <tr>
+//                               <td colSpan={3} style={{ textAlign: "center", opacity: 0.5 }}>
+//                                 No completed sessions yet
+//                               </td>
+//                             </tr>
+//                           )}
+//                       </tbody>
+//                     </table>
+//                   </div>
+//                 </div>
+//               </div>
+//             )}
+
+//             {/* Full history — hidden for admin */}
+//             {!isAdmin && (
+//               <div className="glossy-container">
+//                 <h3 style={{ marginTop: 0 }}>My Full History</h3>
+//                 <div className="table-scroll">
+//                   <table>
+//                     <thead>
+//                       <tr><th>Name</th><th>Date</th><th>Login</th><th>Logout</th></tr>
+//                     </thead>
+//                     <tbody>
+//                       {attendanceData.length > 0
+//                         ? attendanceData.map((row) => (
+//                             <tr key={row.id}>
+//                               <td>{row.name}</td>
+//                               <td>{row.date}</td>
+//                               <td>{new Date(row.login_time).toLocaleTimeString()}</td>
+//                               <td>{row.logout_time ? new Date(row.logout_time).toLocaleTimeString() : "Working..."}</td>
+//                             </tr>
+//                           ))
+//                         : (
+//                           <tr>
+//                             <td colSpan={5} style={{ textAlign: "center", opacity: 0.5 }}>No history found</td>
+//                           </tr>
+//                         )}
+//                     </tbody>
+//                   </table>
+//                 </div>
+//               </div>
+//             )}
+
+//             {/* ════ ADMIN PANEL ════ */}
+//             {isAdmin && (
+//               <div className="glossy-container" style={{ marginTop: "20px" }}>
+//                 <div style={{
+//                   display: "flex", justifyContent: "space-between",
+//                   alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "10px",
+//                 }}>
+//                   <h3 style={{ margin: 0 }}>
+//                     🏢 Admin — All Users Attendance
+//                     <span style={{
+//                       marginLeft: "10px", background: "#0d6efd", color: "#fff",
+//                       borderRadius: "4px", padding: "2px 8px", fontSize: "12px",
+//                     }}>Admin</span>
+//                   </h3>
+//                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+//                     <label style={{ fontSize: "13px", fontWeight: "600" }}>📅 Month:</label>
+//                     <input
+//                       type="month" className="input-field" value={selectedMonth}
+//                       onChange={(e) => setSelectedMonth(e.target.value)}
+//                       style={{ padding: "6px 10px", fontSize: "13px", width: "auto" }}
+//                     />
+//                     <button onClick={exportAdminMonthData} className="btn-secondary">
+//                       Export Excel 📊
+//                     </button>
+//                   </div>
+//                 </div>
+
+//                 <div className="table-scroll">
+//                   <table>
+//                     <thead>
+//                       <tr>
+//                         <th>Name</th><th>Date</th><th>Logged In</th>
+//                         <th>Logged Out</th><th>Total Hours</th><th>Status</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {adminMonthData.length > 0
+//                         ? adminMonthData.map((row) => {
+//                             const login   = new Date(row.login_time);
+//                             const logout  = row.logout_time ? new Date(row.logout_time) : null;
+//                             const hours   = logout ? ((logout - login) / 3600000).toFixed(2) : null;
+//                             const working = !row.logout_time;
+//                             return (
+//                               <tr key={row.id}>
+//                                 <td>{row.name}</td>
+//                                 <td>{row.date}</td>
+//                                 <td>{login.toLocaleTimeString()}</td>
+//                                 <td>{logout ? logout.toLocaleTimeString() : "—"}</td>
+//                                 <td>{hours ? `${hours}h` : "In Progress"}</td>
+//                                 <td>
+//                                   <span style={{
+//                                     padding: "2px 10px", borderRadius: "12px",
+//                                     fontSize: "12px", fontWeight: "600",
+//                                     background: working ? "#fff3cd" : "#d4edda",
+//                                     color:      working ? "#856404" : "#155724",
+//                                   }}>
+//                                     {working ? "Working" : "Present"}
+//                                   </span>
+//                                 </td>
+//                               </tr>
+//                             );
+//                           })
+//                         : (
+//                           <tr>
+//                             <td colSpan={6} style={{ textAlign: "center", opacity: 0.5 }}>
+//                               No records for {selectedMonth}
+//                             </td>
+//                           </tr>
+//                         )}
+//                     </tbody>
+//                   </table>
+//                 </div>
+//               </div>
+//             )}
+//           </>
+//         )}
+
+//         {/* ════ SUPER USER VIEW ════ */}
+//         {loggedInUser && isSuperUser && (
+//           <>
+//             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+//               <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+//                 🛡️ Logged in as <strong>{loggedInUser}</strong>
+//                 <span style={{
+//                   background: "#6f42c1", color: "#fff",
+//                   borderRadius: "4px", padding: "2px 8px", fontSize: "12px",
+//                 }}>Super User</span>
+//               </span>
+//               <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
+//             </div>
+
+//             <div className="glossy-container" style={{ marginBottom: "20px" }}>
+//               <h3 style={{ marginTop: 0 }}>
+//                 🟢 Currently Working
+//                 <span style={{
+//                   marginLeft: "10px", background: "#28a745", color: "#fff",
+//                   borderRadius: "12px", padding: "2px 10px", fontSize: "13px",
+//                 }}>{activeSessions.length}</span>
+//               </h3>
+//               {activeSessions.length > 0 ? (
+//                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+//                   {activeSessions.map((row) => (
+//                     <div key={row.id} style={{
+//                       display: "flex", alignItems: "center", gap: "8px",
+//                       background: "#d4edda", color: "#155724",
+//                       borderRadius: "20px", padding: "6px 14px", fontSize: "13px",
+//                     }}>
+//                       <span>👤 <strong>{row.name}</strong></span>
+//                       <span style={{ opacity: 0.7 }}>since {new Date(row.login_time).toLocaleTimeString()}</span>
+//                       <button
+//                         onClick={() => handleLogout(row.name)}
+//                         style={{
+//                           background: "none", border: "1px solid #155724",
+//                           borderRadius: "10px", padding: "1px 8px",
+//                           cursor: "pointer", fontSize: "11px", color: "#155724",
+//                         }}
+//                       >
+//                         Clock Out
+//                       </button>
+//                     </div>
+//                   ))}
+//                 </div>
+//               ) : (
+//                 <p style={{ margin: 0, opacity: 0.5 }}>No one is currently clocked in.</p>
+//               )}
+//             </div>
+
+//             <div className="glossy-container">
+//               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+//                 <h3 style={{ margin: 0 }}>📋 All Users — Attendance Report</h3>
+//                 <button onClick={exportAllData} className="btn-secondary">Export All Data 📊</button>
+//               </div>
+//               <div className="table-scroll">
+//                 <table>
+//                   <thead>
+//                     <tr>
+//                       <th>Name</th><th>Date</th><th>Login Time</th>
+//                       <th>Logout Time</th><th>Total Hours</th><th>Status</th><th>Action</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {allUsersData.length > 0
+//                       ? allUsersData.map((row) => {
+//                           const login   = new Date(row.login_time);
+//                           const logout  = row.logout_time ? new Date(row.logout_time) : null;
+//                           const hours   = logout ? ((logout - login) / 3600000).toFixed(2) : null;
+//                           const working = !row.logout_time;
+//                           return (
+//                             <tr key={row.id}>
+//                               <td>{row.name}</td>
+//                               <td>{row.date}</td>
+//                               <td>{login.toLocaleTimeString()}</td>
+//                               <td>{logout ? logout.toLocaleTimeString() : "—"}</td>
+//                               <td>{hours ? `${hours}h` : "In Progress"}</td>
+//                               <td>
+//                                 <span style={{
+//                                   padding: "2px 10px", borderRadius: "12px",
+//                                   fontSize: "12px", fontWeight: "600",
+//                                   background: working ? "#fff3cd" : "#d4edda",
+//                                   color:      working ? "#856404" : "#155724",
+//                                 }}>
+//                                   {working ? "Working" : "Present"}
+//                                 </span>
+//                               </td>
+//                               <td>
+//                                 {working && (
+//                                   <button className="btn-secondary" onClick={() => handleLogout(row.name)}>
+//                                     Clock Out
+//                                   </button>
+//                                 )}
+//                               </td>
+//                             </tr>
+//                           );
+//                         })
+//                       : (
+//                         <tr>
+//                           <td colSpan={7} style={{ textAlign: "center", opacity: 0.5 }}>No records found</td>
+//                         </tr>
+//                       )}
+//                   </tbody>
+//                 </table>
+//               </div>
+//             </div>
+//           </>
+//         )}
+
+//       </div>
+//     </div>
+//   );
+// }
+// function AttendancePage({ onMenuOpen }) {
+//   const [loading, setLoading] = useState(false);
+//   const [username, setUsername] = useState("");
+//   const [password, setPassword] = useState("");
+//   const [attendanceData, setAttendanceData] = useState([]);
+//   const [allUsersData, setAllUsersData] = useState([]);
+//   const [loggedInUser, setLoggedInUser] = useState(null);
+//   const [isSuperUser, setIsSuperUser] = useState(false);
+//   const [isAdmin, setIsAdmin] = useState(false);
+
+//   const [selectedMonth, setSelectedMonth] = useState(() => {
+//     const now = new Date();
+//     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+//   });
+
+//   // ── Restore session on mount ──
+//   useEffect(() => {
+//     const saved = sessionStorage.getItem("att_session");
+//     if (saved) {
+//       try {
+//         const { user, isSuper, isAdm } = JSON.parse(saved);
+//         setLoggedInUser(user);
+//         setIsSuperUser(isSuper);
+//         setIsAdmin(isAdm);
+//       } catch {
+//         sessionStorage.removeItem("att_session");
+//       }
+//     }
+//   }, []);
+
+//   useEffect(() => {
+//     if (!loggedInUser) return;
+//     fetchAttendanceData();
+//     if (isSuperUser || isAdmin) fetchAllUsersData();
+//     const interval = setInterval(() => {
+//       fetchAttendanceData();
+//       if (isSuperUser || isAdmin) fetchAllUsersData();
+//     }, 30000);
+//     return () => clearInterval(interval);
+//   }, [loggedInUser, isSuperUser, isAdmin]);
+
+//   const fetchAttendanceData = async () => {
+//     if (!loggedInUser) return;
+//     const { data } = await supabase
+//       .from("Attendance")
+//       .select("*")
+//       .eq("name", loggedInUser)
+//       .order("login_time", { ascending: false });
+//     setAttendanceData(data || []);
+//   };
+
+//   const fetchAllUsersData = async () => {
+//     const { data } = await supabase
+//       .from("Attendance")
+//       .select("*")
+//       .order("date", { ascending: false });
+//     setAllUsersData(data || []);
+//   };
+
+//   const handleAttLogin = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+
+//     const { data: userInfo, error: authError } = await supabase
+//       .rpc("check_user_credentials", { p_username: username, p_password: password });
+
+//     if (authError || !userInfo) {
+//       Toastify({ text: "Invalid credentials ❌", style: { background: "#dc3545" } }).showToast();
+//       setLoading(false);
+//       return;
+//     }
+
+//     const superUser = userInfo.role === "superuser";
+//     setIsSuperUser(superUser);
+
+//     const adminUser = username.toLowerCase() === "havelyninc";
+//     setIsAdmin(adminUser);
+
+//     if (!superUser && !adminUser) {
+//       const { data: activeSession } = await supabase
+//         .from("Attendance")
+//         .select("id")
+//         .eq("name", username)
+//         .is("logout_time", null)
+//         .maybeSingle();
+
+//       if (activeSession) {
+//         Toastify({ text: "Session already active ⚠️", style: { background: "#ff9500" } }).showToast();
+//       } else {
+//         await supabase.from("Attendance").insert([{
+//           name: username,
+//           date: new Date().toISOString().split("T")[0],
+//           login_time: new Date().toISOString(),
+//         }]);
+//         Toastify({ text: "Clocked in! ✅", style: { background: "#28a745" } }).showToast();
+//       }
+//     }
+
+//     // ── Role-specific welcome toasts ──
+//     if (superUser) {
+//       Toastify({ text: `Welcome, ${username} 🛡️`, style: { background: "#6f42c1" } }).showToast();
+//     } else if (adminUser) {
+//       Toastify({ text: `Welcome, ${username} 🏢`, style: { background: "#0d6efd" } }).showToast();
+//     }
+
+//     setLoggedInUser(username);
+
+//     // ── Persist session ──
+//     sessionStorage.setItem("att_session", JSON.stringify({
+//       user: username,
+//       isSuper: superUser,
+//       isAdm: adminUser,
+//     }));
+
+//     setLoading(false);
+//   };
+
+//   const handleLogout = async (name) => {
+//     setLoading(true);
+//     const { data: session } = await supabase
+//       .from("Attendance")
+//       .select("id")
+//       .eq("name", name)
+//       .is("logout_time", null)
+//       .maybeSingle();
+//     if (session) {
+//       await supabase
+//         .from("Attendance")
+//         .update({ logout_time: new Date().toISOString() })
+//         .eq("id", session.id);
+//       fetchAttendanceData();
+//       if (isSuperUser || isAdmin) fetchAllUsersData();
+//       Toastify({ text: `${name} clocked out! ✅`, style: { background: "#28a745" } }).showToast();
+//     } else {
+//       Toastify({ text: "No active session found ⚠️", style: { background: "#ff9500" } }).showToast();
+//     }
+//     setLoading(false);
+//   };
+
+//   const handleSignOut = () => {
+//     Toastify({ text: "Signed out successfully 👋", style: { background: "#6c757d" } }).showToast();
+//     sessionStorage.removeItem("att_session");
+//     setLoggedInUser(null);
+//     setIsSuperUser(false);
+//     setIsAdmin(false);
+//     setAttendanceData([]);
+//     setAllUsersData([]);
+//     setUsername("");
+//     setPassword("");
+//   };
+
+//   const userStats = useMemo(() => {
+//     const stats = {};
+//     const todayStr = new Date().toISOString().split("T")[0];
+//     attendanceData.forEach((row) => {
+//       if (!row.logout_time) return;
+//       const hours = (new Date(row.logout_time) - new Date(row.login_time)) / 3600000;
+//       if (!stats[row.name]) stats[row.name] = { today: 0, monthly: 0 };
+//       if (row.date === todayStr) stats[row.name].today += hours;
+//       stats[row.name].monthly += hours;
+//     });
+//     return stats;
+//   }, [attendanceData]);
+
+//   const exportMyData = () => {
+//     if (attendanceData.length === 0) {
+//       Toastify({ text: "No data to export! ❌", style: { background: "#dc3545" } }).showToast();
+//       return;
+//     }
+//     const rows = attendanceData.map((row) => {
+//       const login = new Date(row.login_time);
+//       const logout = row.logout_time ? new Date(row.logout_time) : null;
+//       return {
+//         Name: row.name,
+//         Date: row.date,
+//         "Login Time": login.toLocaleTimeString(),
+//         "Logout Time": logout ? logout.toLocaleTimeString() : "Working...",
+//         "Total Hours Worked": logout ? ((logout - login) / 3600000).toFixed(2) : "In Progress",
+//         Status: logout ? "Present" : "Working",
+//       };
+//     });
+//     const ws = XLSX.utils.json_to_sheet(rows);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "My Attendance");
+//     XLSX.writeFile(wb, `Attendance_${loggedInUser}_${new Date().toLocaleDateString()}.xlsx`);
+//   };
+
+//   const exportAllData = () => {
+//     if (allUsersData.length === 0) {
+//       Toastify({ text: "No data to export! ❌", style: { background: "#dc3545" } }).showToast();
+//       return;
+//     }
+//     const rows = allUsersData.map((row) => {
+//       const login = new Date(row.login_time);
+//       const logout = row.logout_time ? new Date(row.logout_time) : null;
+//       return {
+//         Name: row.name,
+//         Date: row.date,
+//         "Login Time": login.toLocaleTimeString(),
+//         "Logout Time": logout ? logout.toLocaleTimeString() : "Working...",
+//         "Total Hours Worked": logout ? ((logout - login) / 3600000).toFixed(2) : "In Progress",
+//         Status: logout ? "Present" : "Working",
+//       };
+//     });
+//     const ws = XLSX.utils.json_to_sheet(rows);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "All Attendance");
+//     XLSX.writeFile(wb, `All_Users_Attendance_${new Date().toLocaleDateString()}.xlsx`);
+//   };
+
+//   const adminMonthData = useMemo(() => {
+//     return allUsersData.filter((row) => row.date && row.date.startsWith(selectedMonth));
+//   }, [allUsersData, selectedMonth]);
+
+//   const exportAdminMonthData = () => {
+//     if (adminMonthData.length === 0) {
+//       Toastify({ text: "No data for this month! ❌", style: { background: "#dc3545" } }).showToast();
+//       return;
+//     }
+
+//     const now = new Date();
+
+//     const userTotals = {};
+//     adminMonthData.forEach((row) => {
+//       const login  = new Date(row.login_time);
+//       const logout = row.logout_time ? new Date(row.logout_time) : now;
+//       const hours  = (logout - login) / 3600000;
+//       if (!userTotals[row.name]) {
+//         userTotals[row.name] = { totalHours: 0, sessions: 0, hasActive: false };
+//       }
+//       userTotals[row.name].totalHours += hours;
+//       userTotals[row.name].sessions   += 1;
+//       if (!row.logout_time) userTotals[row.name].hasActive = true;
+//     });
+
+//     const rows = Object.entries(userTotals).map(([name, data]) => ({
+//       Name:                 name,
+//       Month:                selectedMonth,
+//       "Total Sessions":     data.sessions,
+//       "Total Hours Worked": data.totalHours.toFixed(2),
+//       "Note": data.hasActive
+//         ? `Includes live session (as of ${now.toLocaleTimeString()})`
+//         : "All sessions completed",
+//     }));
+
+//     const ws = XLSX.utils.json_to_sheet(rows);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Attendance Summary");
+//     XLSX.writeFile(wb, `Attendance_Summary_${selectedMonth}.xlsx`);
+//     Toastify({ text: "Exported successfully 📊", style: { background: "#28a745" } }).showToast();
+//   };
+
+//   const activeSessions = useMemo(
+//     () => allUsersData.filter((r) => !r.logout_time),
+//     [allUsersData]
+//   );
+
+//   const ClockedInBadge = ({ name }) => (
+//     <div style={{
+//       display: "flex", flexDirection: "column",
+//       alignItems: "center", justifyContent: "center",
+//       gap: "14px", padding: "28px 20px",
+//     }}>
+//       <svg width="110" height="110" viewBox="0 0 110 110"
+//         xmlns="http://www.w3.org/2000/svg" style={{ overflow: "visible" }}>
+//         <style>{`
+//           @keyframes att-ring-spin {
+//             0%   { stroke-dashoffset: 251; }
+//             60%  { stroke-dashoffset: 0; }
+//             100% { stroke-dashoffset: 0; }
+//           }
+//           @keyframes att-check-draw {
+//             0%   { stroke-dashoffset: 60; opacity: 0; }
+//             40%  { opacity: 0; }
+//             100% { stroke-dashoffset: 0; opacity: 1; }
+//           }
+//           @keyframes att-pulse-ring {
+//             0%   { r: 46; opacity: 0.6; }
+//             100% { r: 58; opacity: 0; }
+//           }
+//           @keyframes att-icon-pop {
+//             0%   { transform: scale(0.7); opacity: 0; }
+//             70%  { transform: scale(1.08); opacity: 1; }
+//             100% { transform: scale(1); opacity: 1; }
+//           }
+//           @keyframes att-badge-float {
+//             0%, 100% { transform: translateY(0px); }
+//             50%       { transform: translateY(-5px); }
+//           }
+//           .att-badge-group {
+//             animation: att-badge-float 3s ease-in-out infinite;
+//             transform-origin: 55px 55px;
+//           }
+//           .att-icon-pop {
+//             animation: att-icon-pop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.5s both;
+//             transform-origin: 55px 55px;
+//           }
+//         `}</style>
+//         <circle cx="55" cy="55" r="46"
+//           fill="none" stroke="#28a745" strokeWidth="2" opacity="0"
+//           style={{ animation: "att-pulse-ring 2s ease-out 0.8s infinite" }}
+//         />
+//         <g className="att-badge-group">
+//           <circle cx="55" cy="55" r="46" fill="#e8f5e9" />
+//           <circle cx="55" cy="55" r="40"
+//             fill="none" stroke="#28a745" strokeWidth="5"
+//             strokeLinecap="round"
+//             strokeDasharray="251" strokeDashoffset="251"
+//             transform="rotate(-90 55 55)"
+//             style={{ animation: "att-ring-spin 1.2s cubic-bezier(0.4,0,0.2,1) 0.1s forwards" }}
+//           />
+//           <circle cx="55" cy="55" r="32" fill="#28a745" className="att-icon-pop" />
+//           <polyline points="38,55 50,67 72,43"
+//             fill="none" stroke="#fff" strokeWidth="5"
+//             strokeLinecap="round" strokeLinejoin="round"
+//             strokeDasharray="60" strokeDashoffset="60"
+//             style={{ animation: "att-check-draw 0.5s ease-out 0.9s forwards" }}
+//           />
+//         </g>
+//       </svg>
+//       <div style={{ textAlign: "center" }}>
+//         <div style={{ fontWeight: "700", fontSize: "16px", color: "#155724", letterSpacing: "0.3px" }}>
+//           ✅ Clocked In
+//         </div>
+//         <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>
+//           Welcome back, <strong>{name}</strong>
+//         </div>
+//         <div style={{
+//           marginTop: "8px", fontSize: "12px",
+//           background: "#d4edda", color: "#155724",
+//           borderRadius: "20px", padding: "4px 14px", display: "inline-block",
+//         }}>
+//           Session active 🟢
+//         </div>
+//       </div>
+//     </div>
+//   );
+
+//   return (
+//     <div className="page active">
+//       <Topbar title="Attendance" onMenuOpen={onMenuOpen} className="glossy-container" />
+//       <div style={{ padding: "20px" }}>
+
+//         {/* ════ NOT LOGGED IN ════ */}
+//         {!loggedInUser && (
+//           <div className="glossy-container" style={{ maxWidth: "400px", margin: "40px auto" }}>
+//             <h3 style={{ marginTop: 0 }}>Clock In</h3>
+//             <form onSubmit={handleAttLogin} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+//               <input
+//                 className="input-field" placeholder="Username" value={username}
+//                 onChange={(e) => setUsername(e.target.value)} required
+//               />
+//               <input
+//                 type="password" className="input-field" placeholder="Password" value={password}
+//                 onChange={(e) => setPassword(e.target.value)} required
+//               />
+//               <button type="submit" className="btn-primary" disabled={loading}>
+//                 {loading ? "Please wait..." : "Mark Attendance"}
+//               </button>
+//             </form>
+//           </div>
+//         )}
+
+//         {/* ════ NORMAL USER VIEW ════ */}
+//         {loggedInUser && !isSuperUser && (
+//           <>
+//             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+//               <span>👤 Logged in as <strong>{loggedInUser}</strong></span>
+//               <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
+//             </div>
+
+//             {/* Badge + Summary — hidden for admin */}
+//             {!isAdmin && (
+//               <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "20px" }}>
+//                 <div className="glossy-container" style={{
+//                   flex: "1", minWidth: "300px",
+//                   display: "flex", alignItems: "center", justifyContent: "center",
+//                 }}>
+//                   <ClockedInBadge name={loggedInUser} />
+//                 </div>
+//                 <div className="glossy-container" style={{ flex: "1", minWidth: "300px" }}>
+//                   <h3 style={{ marginTop: 0 }}>My Summary</h3>
+//                   <button onClick={exportMyData} className="btn-secondary"
+//                     style={{ width: "100%", marginBottom: "10px" }}>
+//                     Export My Data 📊
+//                   </button>
+//                   <div className="table-scroll">
+//                     <table>
+//                       <thead>
+//                         <tr><th>Name</th><th>Today</th><th>Monthly</th></tr>
+//                       </thead>
+//                       <tbody>
+//                         {Object.entries(userStats).length > 0
+//                           ? Object.entries(userStats).map(([name, data]) => (
+//                               <tr key={name}>
+//                                 <td>{name}</td>
+//                                 <td>{data.today.toFixed(1)}h</td>
+//                                 <td>{data.monthly.toFixed(1)}h</td>
+//                               </tr>
+//                             ))
+//                           : (
+//                             <tr>
+//                               <td colSpan={3} style={{ textAlign: "center", opacity: 0.5 }}>
+//                                 No completed sessions yet
+//                               </td>
+//                             </tr>
+//                           )}
+//                       </tbody>
+//                     </table>
+//                   </div>
+//                 </div>
+//               </div>
+//             )}
+
+//             {/* Full history — hidden for admin */}
+//             {!isAdmin && (
+//               <div className="glossy-container">
+//                 <h3 style={{ marginTop: 0 }}>My Full History</h3>
+//                 <div className="table-scroll">
+//                   <table>
+//                     <thead>
+//                       <tr><th>Name</th><th>Date</th><th>Login</th><th>Logout</th></tr>
+//                     </thead>
+//                     <tbody>
+//                       {attendanceData.length > 0
+//                         ? attendanceData.map((row) => (
+//                             <tr key={row.id}>
+//                               <td>{row.name}</td>
+//                               <td>{row.date}</td>
+//                               <td>{new Date(row.login_time).toLocaleTimeString()}</td>
+//                               <td>{row.logout_time ? new Date(row.logout_time).toLocaleTimeString() : "Working..."}</td>
+//                             </tr>
+//                           ))
+//                         : (
+//                           <tr>
+//                             <td colSpan={4} style={{ textAlign: "center", opacity: 0.5 }}>No history found</td>
+//                           </tr>
+//                         )}
+//                     </tbody>
+//                   </table>
+//                 </div>
+//               </div>
+//             )}
+
+//             {/* ════ ADMIN PANEL ════ */}
+//             {isAdmin && (
+//               <div className="glossy-container" style={{ marginTop: "20px" }}>
+//                 <div style={{
+//                   display: "flex", justifyContent: "space-between",
+//                   alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "10px",
+//                 }}>
+//                   <h3 style={{ margin: 0 }}>
+//                     🏢 Admin — All Users Attendance
+//                     <span style={{
+//                       marginLeft: "10px", background: "#0d6efd", color: "#fff",
+//                       borderRadius: "4px", padding: "2px 8px", fontSize: "12px",
+//                     }}>Admin</span>
+//                   </h3>
+//                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+//                     <label style={{ fontSize: "13px", fontWeight: "600" }}>📅 Month:</label>
+//                     <input
+//                       type="month" className="input-field" value={selectedMonth}
+//                       onChange={(e) => setSelectedMonth(e.target.value)}
+//                       style={{ padding: "6px 10px", fontSize: "13px", width: "auto" }}
+//                     />
+//                     <button onClick={exportAdminMonthData} className="btn-success">
+//                       Export Excel 📊
+//                     </button>
+//                   </div>
+//                 </div>
+//                 <div className="table-scroll">
+//                   <table>
+//                     <thead>
+//                       <tr>
+//                         <th>Name</th><th>Date</th><th>Logged In</th>
+//                         <th>Logged Out</th><th>Total Hours</th><th>Status</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {adminMonthData.length > 0
+//                         ? adminMonthData.map((row) => {
+//                             const login   = new Date(row.login_time);
+//                             const logout  = row.logout_time ? new Date(row.logout_time) : null;
+//                             const hours   = logout ? ((logout - login) / 3600000).toFixed(2) : null;
+//                             const working = !row.logout_time;
+//                             return (
+//                               <tr key={row.id}>
+//                                 <td>{row.name}</td>
+//                                 <td>{row.date}</td>
+//                                 <td>{login.toLocaleTimeString()}</td>
+//                                 <td>{logout ? logout.toLocaleTimeString() : "—"}</td>
+//                                 <td>{hours ? `${hours}h` : "In Progress"}</td>
+//                                 <td>
+//                                   <span style={{
+//                                     padding: "2px 10px", borderRadius: "12px",
+//                                     fontSize: "12px", fontWeight: "600",
+//                                     background: working ? "#fff3cd" : "#d4edda",
+//                                     color:      working ? "#856404" : "#155724",
+//                                   }}>
+//                                     {working ? "Working" : "Present"}
+//                                   </span>
+//                                 </td>
+//                               </tr>
+//                             );
+//                           })
+//                         : (
+//                           <tr>
+//                             <td colSpan={6} style={{ textAlign: "center", opacity: 0.5 }}>
+//                               No records for {selectedMonth}
+//                             </td>
+//                           </tr>
+//                         )}
+//                     </tbody>
+//                   </table>
+//                 </div>
+//               </div>
+//             )}
+//           </>
+//         )}
+
+//         {/* ════ SUPER USER VIEW ════ */}
+//         {loggedInUser && isSuperUser && (
+//           <>
+//             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+//               <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+//                 🛡️ Logged in as <strong>{loggedInUser}</strong>
+//                 <span style={{
+//                   background: "#6f42c1", color: "#fff",
+//                   borderRadius: "4px", padding: "2px 8px", fontSize: "12px",
+//                 }}>Super User</span>
+//               </span>
+//               <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
+//             </div>
+
+//             <div className="glossy-container" style={{ marginBottom: "20px" }}>
+//               <h3 style={{ marginTop: 0 }}>
+//                 🟢 Currently Working
+//                 <span style={{
+//                   marginLeft: "10px", background: "#28a745", color: "#fff",
+//                   borderRadius: "12px", padding: "2px 10px", fontSize: "13px",
+//                 }}>{activeSessions.length}</span>
+//               </h3>
+//               {activeSessions.length > 0 ? (
+//                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+//                   {activeSessions.map((row) => (
+//                     <div key={row.id} style={{
+//                       display: "flex", alignItems: "center", gap: "8px",
+//                       background: "#d4edda", color: "#155724",
+//                       borderRadius: "20px", padding: "6px 14px", fontSize: "13px",
+//                     }}>
+//                       <span>👤 <strong>{row.name}</strong></span>
+//                       <span style={{ opacity: 0.7 }}>since {new Date(row.login_time).toLocaleTimeString()}</span>
+//                       <button
+//                         onClick={() => handleLogout(row.name)}
+//                         style={{
+//                           background: "none", border: "1px solid #155724",
+//                           borderRadius: "10px", padding: "1px 8px",
+//                           cursor: "pointer", fontSize: "11px", color: "#155724",
+//                         }}
+//                       >
+//                         Clock Out
+//                       </button>
+//                     </div>
+//                   ))}
+//                 </div>
+//               ) : (
+//                 <p style={{ margin: 0, opacity: 0.5 }}>No one is currently clocked in.</p>
+//               )}
+//             </div>
+
+//             <div className="glossy-container">
+//               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+//                 <h3 style={{ margin: 0 }}>📋 All Users — Attendance Report</h3>
+//                 <button onClick={exportAllData} className="btn-secondary">Export All Data 📊</button>
+//               </div>
+//               <div className="table-scroll">
+//                 <table>
+//                   <thead>
+//                     <tr>
+//                       <th>Name</th><th>Date</th><th>Login Time</th>
+//                       <th>Logout Time</th><th>Total Hours</th><th>Status</th><th>Action</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {allUsersData.length > 0
+//                       ? allUsersData.map((row) => {
+//                           const login   = new Date(row.login_time);
+//                           const logout  = row.logout_time ? new Date(row.logout_time) : null;
+//                           const hours   = logout ? ((logout - login) / 3600000).toFixed(2) : null;
+//                           const working = !row.logout_time;
+//                           return (
+//                             <tr key={row.id}>
+//                               <td>{row.name}</td>
+//                               <td>{row.date}</td>
+//                               <td>{login.toLocaleTimeString()}</td>
+//                               <td>{logout ? logout.toLocaleTimeString() : "—"}</td>
+//                               <td>{hours ? `${hours}h` : "In Progress"}</td>
+//                               <td>
+//                                 <span style={{
+//                                   padding: "2px 10px", borderRadius: "12px",
+//                                   fontSize: "12px", fontWeight: "600",
+//                                   background: working ? "#fff3cd" : "#d4edda",
+//                                   color:      working ? "#856404" : "#155724",
+//                                 }}>
+//                                   {working ? "Working" : "Present"}
+//                                 </span>
+//                               </td>
+//                               <td>
+//                                 {working && (
+//                                   <button className="btn-secondary" onClick={() => handleLogout(row.name)}>
+//                                     Clock Out
+//                                   </button>
+//                                 )}
+//                               </td>
+//                             </tr>
+//                           );
+//                         })
+//                       : (
+//                         <tr>
+//                           <td colSpan={7} style={{ textAlign: "center", opacity: 0.5 }}>No records found</td>
+//                         </tr>
+//                       )}
+//                   </tbody>
+//                 </table>
+//               </div>
+//             </div>
+//           </>
+//         )}
+
+//       </div>
+//     </div>
+//   );
+// }
 function AttendancePage({ onMenuOpen }) {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [attendanceData, setAttendanceData] = useState([]);
+  const [allUsersData, setAllUsersData] = useState([]);
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [isSuperUser, setIsSuperUser] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminSelectedUser, setAdminSelectedUser] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+
+  // ── Restore session on mount ──
   useEffect(() => {
-    fetchAttendanceData();
-    const interval = setInterval(fetchAttendanceData, 30000); // Poll for updates
-    return () => clearInterval(interval);
+    const saved = sessionStorage.getItem("att_session");
+    if (saved) {
+      try {
+        const { user, isSuper, isAdm } = JSON.parse(saved);
+        setLoggedInUser(user);
+        setIsSuperUser(isSuper);
+        setIsAdmin(isAdm);
+      } catch {
+        sessionStorage.removeItem("att_session");
+      }
+    }
   }, []);
 
+  useEffect(() => {
+    if (!loggedInUser) return;
+    fetchAttendanceData();
+    if (isSuperUser || isAdmin) fetchAllUsersData();
+    const interval = setInterval(() => {
+      fetchAttendanceData();
+      if (isSuperUser || isAdmin) fetchAllUsersData();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [loggedInUser, isSuperUser, isAdmin]);
+
   const fetchAttendanceData = async () => {
-    const { data } = await supabase.from("Attendance").select("*").order("login_time", { ascending: false });
+    if (!loggedInUser) return;
+    const { data } = await supabase
+      .from("Attendance")
+      .select("*")
+      .eq("name", loggedInUser)
+      .order("login_time", { ascending: false });
     setAttendanceData(data || []);
+  };
+
+  const fetchAllUsersData = async () => {
+    const { data } = await supabase
+      .from("Attendance")
+      .select("*")
+      .order("date", { ascending: false });
+    setAllUsersData(data || []);
   };
 
   const handleAttLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const { data: userId, error: authError } = await supabase
-      .rpc('check_user_credentials', { p_username: username, p_password: password });
 
-    if (authError || !userId) {
-      Toastify({ text: "Invalid credentials", style: { background: "#dc3545" } }).showToast();
-      setLoading(false); return;
+    const { data: userInfo, error: authError } = await supabase
+      .rpc("check_user_credentials", { p_username: username, p_password: password });
+
+    if (authError || !userInfo) {
+      Toastify({ text: "Invalid credentials ❌", style: { background: "#dc3545" } }).showToast();
+      setLoading(false);
+      return;
     }
 
-    const { data: activeSession } = await supabase
-      .from("Attendance").select("id").eq("name", username).is("logout_time", null).maybeSingle();
+    const superUser = userInfo.role === "superuser";
+    setIsSuperUser(superUser);
 
-    if (activeSession) {
-      Toastify({ text: "Session already active for this user.", style: { background: "#ff9500" } }).showToast();
-    } else {
-      await supabase.from("Attendance").insert([{ name: username, date: new Date().toISOString().split('T')[0], login_time: new Date().toISOString() }]);
-      fetchAttendanceData();
-      Toastify({ text: "Clocked in!", style: { background: "#28a745" } }).showToast();
+    const adminUser = username.toLowerCase() === "havelyninc";
+    setIsAdmin(adminUser);
+
+    if (!superUser && !adminUser) {
+      const { data: activeSession } = await supabase
+        .from("Attendance")
+        .select("id")
+        .eq("name", username)
+        .is("logout_time", null)
+        .maybeSingle();
+
+      if (activeSession) {
+        Toastify({ text: "Session already active ⚠️", style: { background: "#ff9500" } }).showToast();
+      } else {
+        await supabase.from("Attendance").insert([{
+          name: username,
+          date: new Date().toISOString().split("T")[0],
+          login_time: new Date().toISOString(),
+        }]);
+        Toastify({ text: "Clocked in! ✅", style: { background: "#28a745" } }).showToast();
+      }
     }
+
+    if (superUser) {
+      Toastify({ text: `Welcome, ${username} 🛡️`, style: { background: "#6f42c1" } }).showToast();
+    } else if (adminUser) {
+      Toastify({ text: `Welcome, ${username} 🏢`, style: { background: "#0d6efd" } }).showToast();
+    }
+
+    setLoggedInUser(username);
+    sessionStorage.setItem("att_session", JSON.stringify({
+      user: username,
+      isSuper: superUser,
+      isAdm: adminUser,
+    }));
     setLoading(false);
   };
 
   const handleLogout = async (name) => {
     setLoading(true);
     const { data: session } = await supabase
-      .from("Attendance").select("id").eq("name", name).is("logout_time", null).maybeSingle();
+      .from("Attendance")
+      .select("id")
+      .eq("name", name)
+      .is("logout_time", null)
+      .maybeSingle();
     if (session) {
-      await supabase.from("Attendance").update({ logout_time: new Date().toISOString() }).eq("id", session.id);
+      await supabase
+        .from("Attendance")
+        .update({ logout_time: new Date().toISOString() })
+        .eq("id", session.id);
       fetchAttendanceData();
+      if (isSuperUser || isAdmin) fetchAllUsersData();
+      Toastify({ text: `${name} clocked out! ✅`, style: { background: "#28a745" } }).showToast();
+    } else {
+      Toastify({ text: "No active session found ⚠️", style: { background: "#ff9500" } }).showToast();
     }
     setLoading(false);
   };
 
+  const handleSignOut = () => {
+    Toastify({ text: "Signed out successfully 👋", style: { background: "#6c757d" } }).showToast();
+    sessionStorage.removeItem("att_session");
+    setLoggedInUser(null);
+    setIsSuperUser(false);
+    setIsAdmin(false);
+    setAttendanceData([]);
+    setAllUsersData([]);
+    setUsername("");
+    setPassword("");
+  };
+
   const userStats = useMemo(() => {
     const stats = {};
-    const todayStr = new Date().toISOString().split('T')[0];
-    attendanceData.forEach(row => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    attendanceData.forEach((row) => {
       if (!row.logout_time) return;
       const hours = (new Date(row.logout_time) - new Date(row.login_time)) / 3600000;
       if (!stats[row.name]) stats[row.name] = { today: 0, monthly: 0 };
@@ -720,102 +2050,574 @@ function AttendancePage({ onMenuOpen }) {
     return stats;
   }, [attendanceData]);
 
-const exportToExcel = () => {
-  if (attendanceData.length === 0) {
-    showToast("No data to export!", "#dc3545");
-    return;
-  }
+  // ── Unique user list for admin dropdown ──
+  const allUserNames = useMemo(() => {
+    return [...new Set(allUsersData.map((r) => r.name))].sort();
+  }, [allUsersData]);
 
-  // 1. Map the raw data into a formatted report
-  const formattedData = attendanceData.map((row) => {
-    const login = new Date(row.login_time);
-    const logout = row.logout_time ? new Date(row.logout_time) : null;
-    
-    // Calculate total hours worked
-    const totalHours = logout 
-      ? ((logout - login) / 3600000).toFixed(2) 
-      : "In Progress";
+  // ── Filtered data for admin table ──
+  const adminFilteredData = useMemo(() => {
+    return allUsersData.filter((row) => {
+      const matchUser = adminSelectedUser === "all" || row.name === adminSelectedUser;
+      const matchFrom = !dateFrom || row.date >= dateFrom;
+      const matchTo   = !dateTo   || row.date <= dateTo;
+      return matchUser && matchFrom && matchTo;
+    });
+  }, [allUsersData, adminSelectedUser, dateFrom, dateTo]);
 
-    return {
-      "User Name": row.name,
-      "Date": row.date,
-      "Login Time": login.toLocaleTimeString(),
-      "Logout Time": logout ? logout.toLocaleTimeString() : "Working...",
-      "Total Hours Worked": totalHours
-    };
-  });
+  // ── Export: current user only ──
+  const exportMyData = () => {
+    if (attendanceData.length === 0) {
+      Toastify({ text: "No data to export! ❌", style: { background: "#dc3545" } }).showToast();
+      return;
+    }
+    const rows = attendanceData.map((row) => {
+      const login  = new Date(row.login_time);
+      const logout = row.logout_time ? new Date(row.logout_time) : null;
+      return {
+        "Name":               row.name,
+        "Date":               row.date,
+        "Login Time":         login.toLocaleTimeString(),
+        "Logout Time":        logout ? logout.toLocaleTimeString() : "Working...",
+        "Total Hours Worked": logout ? ((logout - login) / 3600000).toFixed(2) : "In Progress",
+        "Status":             logout ? "Present" : "Working",
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "My Attendance");
+    XLSX.writeFile(wb, `Attendance_${loggedInUser}_${new Date().toLocaleDateString()}.xlsx`);
+  };
 
-  // 2. Create and export the worksheet
-  const ws = XLSX.utils.json_to_sheet(formattedData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
-  XLSX.writeFile(wb, `Attendance_Report_${new Date().toLocaleDateString()}.xlsx`);
-};
+  // ── Export: superuser all data ──
+  const exportAllData = () => {
+    if (allUsersData.length === 0) {
+      Toastify({ text: "No data to export! ❌", style: { background: "#dc3545" } }).showToast();
+      return;
+    }
+    const rows = allUsersData.map((row) => {
+      const login  = new Date(row.login_time);
+      const logout = row.logout_time ? new Date(row.logout_time) : null;
+      return {
+        "Name":               row.name,
+        "Date":               row.date,
+        "Login Time":         login.toLocaleTimeString(),
+        "Logout Time":        logout ? logout.toLocaleTimeString() : "Working...",
+        "Total Hours Worked": logout ? ((logout - login) / 3600000).toFixed(2) : "In Progress",
+        "Status":             logout ? "Present" : "Working",
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "All Attendance");
+    XLSX.writeFile(wb, `All_Users_Attendance_${new Date().toLocaleDateString()}.xlsx`);
+  };
+
+  // ── Export: admin filtered data (user + date range) with summary sheet ──
+  const exportAdminFilteredData = () => {
+    if (adminFilteredData.length === 0) {
+      Toastify({ text: "No data for selected filters! ❌", style: { background: "#dc3545" } }).showToast();
+      return;
+    }
+
+    const now = new Date();
+
+    // Detail rows
+    const rows = adminFilteredData.map((row) => {
+      const login  = new Date(row.login_time);
+      const logout = row.logout_time ? new Date(row.logout_time) : now;
+      return {
+        "Name":               row.name,
+        "Date":               row.date,
+        "Login Time":         login.toLocaleTimeString(),
+        "Logout Time":        row.logout_time
+          ? logout.toLocaleTimeString()
+          : `In Progress (as of ${now.toLocaleTimeString()})`,
+        "Total Hours Worked": ((logout - login) / 3600000).toFixed(2),
+        "Status":             row.logout_time ? "Present" : "Working",
+      };
+    });
+
+    // Summary rows (per user totals)
+    const userTotals = {};
+    adminFilteredData.forEach((row) => {
+      const login  = new Date(row.login_time);
+      const logout = row.logout_time ? new Date(row.logout_time) : now;
+      const hours  = (logout - login) / 3600000;
+      if (!userTotals[row.name]) userTotals[row.name] = { sessions: 0, totalHours: 0, hasActive: false };
+      userTotals[row.name].sessions   += 1;
+      userTotals[row.name].totalHours += hours;
+      if (!row.logout_time) userTotals[row.name].hasActive = true;
+    });
+
+    const summaryRows = Object.entries(userTotals).map(([name, d]) => ({
+      "Name":               name,
+      "Total Sessions":     d.sessions,
+      "Total Hours Worked": d.totalHours.toFixed(2),
+      "Note": d.hasActive
+        ? `Includes live session (as of ${now.toLocaleTimeString()})`
+        : "All sessions completed",
+    }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows),        "Attendance Detail");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summary");
+
+    const userLabel = adminSelectedUser === "all" ? "All_Users" : adminSelectedUser;
+    const fromLabel = dateFrom || "start";
+    const toLabel   = dateTo   || "end";
+    XLSX.writeFile(wb, `Attendance_${userLabel}_${fromLabel}_to_${toLabel}.xlsx`);
+    Toastify({ text: "Exported successfully 📊", style: { background: "#28a745" } }).showToast();
+  };
+
+  const activeSessions = useMemo(
+    () => allUsersData.filter((r) => !r.logout_time),
+    [allUsersData]
+  );
+
+  const ClockedInBadge = ({ name }) => (
+    <div style={{
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      gap: "14px", padding: "28px 20px",
+    }}>
+      <svg width="110" height="110" viewBox="0 0 110 110"
+        xmlns="http://www.w3.org/2000/svg" style={{ overflow: "visible" }}>
+        <style>{`
+          @keyframes att-ring-spin {
+            0%   { stroke-dashoffset: 251; }
+            60%  { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 0; }
+          }
+          @keyframes att-check-draw {
+            0%   { stroke-dashoffset: 60; opacity: 0; }
+            40%  { opacity: 0; }
+            100% { stroke-dashoffset: 0; opacity: 1; }
+          }
+          @keyframes att-pulse-ring {
+            0%   { r: 46; opacity: 0.6; }
+            100% { r: 58; opacity: 0; }
+          }
+          @keyframes att-icon-pop {
+            0%   { transform: scale(0.7); opacity: 0; }
+            70%  { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes att-badge-float {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-5px); }
+          }
+          .att-badge-group {
+            animation: att-badge-float 3s ease-in-out infinite;
+            transform-origin: 55px 55px;
+          }
+          .att-icon-pop {
+            animation: att-icon-pop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.5s both;
+            transform-origin: 55px 55px;
+          }
+        `}</style>
+        <circle cx="55" cy="55" r="46"
+          fill="none" stroke="#28a745" strokeWidth="2" opacity="0"
+          style={{ animation: "att-pulse-ring 2s ease-out 0.8s infinite" }}
+        />
+        <g className="att-badge-group">
+          <circle cx="55" cy="55" r="46" fill="#e8f5e9" />
+          <circle cx="55" cy="55" r="40"
+            fill="none" stroke="#28a745" strokeWidth="5"
+            strokeLinecap="round"
+            strokeDasharray="251" strokeDashoffset="251"
+            transform="rotate(-90 55 55)"
+            style={{ animation: "att-ring-spin 1.2s cubic-bezier(0.4,0,0.2,1) 0.1s forwards" }}
+          />
+          <circle cx="55" cy="55" r="32" fill="#28a745" className="att-icon-pop" />
+          <polyline points="38,55 50,67 72,43"
+            fill="none" stroke="#fff" strokeWidth="5"
+            strokeLinecap="round" strokeLinejoin="round"
+            strokeDasharray="60" strokeDashoffset="60"
+            style={{ animation: "att-check-draw 0.5s ease-out 0.9s forwards" }}
+          />
+        </g>
+      </svg>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontWeight: "700", fontSize: "16px", color: "#155724", letterSpacing: "0.3px" }}>
+          ✅ Clocked In
+        </div>
+        <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>
+          Welcome back, <strong>{name}</strong>
+        </div>
+        <div style={{
+          marginTop: "8px", fontSize: "12px",
+          background: "#d4edda", color: "#155724",
+          borderRadius: "20px", padding: "4px 14px", display: "inline-block",
+        }}>
+          Session active 🟢
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="page active">
-      {/* Unified Header */}
-      <Topbar title="Attendance" onMenuOpen={onMenuOpen} className="glossy-container"/> 
-    
+      <Topbar title="Attendance" onMenuOpen={onMenuOpen} className="glossy-container" />
       <div style={{ padding: "20px" }}>
-        {/* TOP SECTION: LOGIN & SUMMARY */}
-        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "20px" }}>
-          
-          {/* LOGIN FORM */}
-          <div className="glossy-container" style={{ flex: "1", minWidth: "300px" }}>
+
+        {/* ════════════════════════════════
+             NOT LOGGED IN
+            ════════════════════════════════ */}
+        {!loggedInUser && (
+          <div className="glossy-container" style={{ maxWidth: "400px", margin: "40px auto" }}>
             <h3 style={{ marginTop: 0 }}>Clock In</h3>
             <form onSubmit={handleAttLogin} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <input className="input-field" placeholder="Username" onChange={(e) => setUsername(e.target.value)} required />
-              <input type="password" className="input-field" placeholder="Password" onChange={(e) => setPassword(e.target.value)} required />
-              <button type="submit" className="btn-primary" disabled={loading}>Mark Attendance</button>
+              <input
+                className="input-field" placeholder="Username" value={username}
+                onChange={(e) => setUsername(e.target.value)} required
+              />
+              <input
+                type="password" className="input-field" placeholder="Password" value={password}
+                onChange={(e) => setPassword(e.target.value)} required
+              />
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? "Please wait..." : "Mark Attendance"}
+              </button>
             </form>
           </div>
+        )}
 
-          {/* SUMMARY TABLE */}
-          <div className="glossy-container" style={{ flex: "1", minWidth: "300px" }}>
-            <h3>User Summary</h3>
-            <button onClick={exportToExcel} className="btn-secondary" style={{ width: "100%", marginBottom: "10px" }}>Export All Data 📊</button>
-            <div className="table-scroll">
-              <table>
-                <thead><tr><th>Name</th><th>Today</th><th>Monthly</th></tr></thead>
-                <tbody>
-                  {Object.entries(userStats).map(([name, data]) => (
-                    <tr key={name}>
-                      <td>{name}</td>
-                      <td>{data.today.toFixed(1)}h</td>
-                      <td>{data.monthly.toFixed(1)}h</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* ════════════════════════════════
+             NORMAL USER VIEW
+            ════════════════════════════════ */}
+        {loggedInUser && !isSuperUser && (
+          <>
+            {/* Identity bar */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <span>👤 Logged in as <strong>{loggedInUser}</strong></span>
+              <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
             </div>
-          </div>
-        </div>
 
-        {/* BOTTOM SECTION: HISTORY TABLE */}
-        <div className="glossy-container">
-          <h3>Full History</h3>
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Name</th><th>Date</th><th>Login</th><th>Logout</th><th>Action</th></tr></thead>
-              <tbody>
-                {attendanceData.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.name}</td>
-                    <td>{row.date}</td>
-                    <td>{new Date(row.login_time).toLocaleTimeString()}</td>
-                    <td>{row.logout_time ? new Date(row.logout_time).toLocaleTimeString() : "Working..."}</td>
-                    <td>
-                      {!row.logout_time && (
-                        <button className="btn-secondary" onClick={() => handleLogout(row.name)}>Logout</button>
+            {/* Badge + Summary — normal users only */}
+            {!isAdmin && (
+              <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "20px" }}>
+                <div className="glossy-container" style={{
+                  flex: "1", minWidth: "300px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <ClockedInBadge name={loggedInUser} />
+                </div>
+                <div className="glossy-container" style={{ flex: "1", minWidth: "300px" }}>
+                  <h3 style={{ marginTop: 0 }}>My Summary</h3>
+                  <button onClick={exportMyData} className="btn-secondary"
+                    style={{ width: "100%", marginBottom: "10px" }}>
+                    Export My Data 📊
+                  </button>
+                  <div className="table-scroll">
+                    <table>
+                      <thead>
+                        <tr><th>Name</th><th>Today</th><th>Monthly</th></tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(userStats).length > 0
+                          ? Object.entries(userStats).map(([name, data]) => (
+                              <tr key={name}>
+                                <td>{name}</td>
+                                <td>{data.today.toFixed(1)}h</td>
+                                <td>{data.monthly.toFixed(1)}h</td>
+                              </tr>
+                            ))
+                          : (
+                            <tr>
+                              <td colSpan={3} style={{ textAlign: "center", opacity: 0.5 }}>
+                                No completed sessions yet
+                              </td>
+                            </tr>
+                          )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Full history — normal users only */}
+            {!isAdmin && (
+              <div className="glossy-container">
+                <h3 style={{ marginTop: 0 }}>My Full History</h3>
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr><th>Name</th><th>Date</th><th>Login</th><th>Logout</th></tr>
+                    </thead>
+                    <tbody>
+                      {attendanceData.length > 0
+                        ? attendanceData.map((row) => (
+                            <tr key={row.id}>
+                              <td>{row.name}</td>
+                              <td>{row.date}</td>
+                              <td>{new Date(row.login_time).toLocaleTimeString()}</td>
+                              <td>{row.logout_time ? new Date(row.logout_time).toLocaleTimeString() : "Working..."}</td>
+                            </tr>
+                          ))
+                        : (
+                          <tr>
+                            <td colSpan={4} style={{ textAlign: "center", opacity: 0.5 }}>No history found</td>
+                          </tr>
+                        )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ════ ADMIN PANEL ════ */}
+            {isAdmin && (
+              <div className="glossy-container" style={{ marginTop: "20px" }}>
+
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+                  <h3 style={{ margin: 0 }}>
+                    🏢 Admin — All Users Attendance
+                    <span style={{
+                      marginLeft: "10px", background: "#0d6efd", color: "#fff",
+                      borderRadius: "4px", padding: "2px 8px", fontSize: "12px",
+                    }}>Admin</span>
+                  </h3>
+                </div>
+
+                {/* Filter bar */}
+                <div style={{
+                  display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "flex-end",
+                  background: "rgba(13,110,253,0.05)", borderRadius: "10px",
+                  padding: "14px 16px", marginBottom: "16px",
+                }}>
+                  {/* User dropdown */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", opacity: 0.7 }}>👤 User</label>
+                    <select
+                      className="input-field"
+                      value={adminSelectedUser}
+                      onChange={(e) => setAdminSelectedUser(e.target.value)}
+                      style={{ padding: "7px 10px", fontSize: "13px", minWidth: "160px" }}
+                    >
+                      <option value="all">All Users</option>
+                      {allUserNames.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* From date */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", opacity: 0.7 }}>📅 From</label>
+                    <input
+                      type="date" className="input-field"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      style={{ padding: "7px 10px", fontSize: "13px" }}
+                    />
+                  </div>
+
+                  {/* To date */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", opacity: 0.7 }}>📅 To</label>
+                    <input
+                      type="date" className="input-field"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      style={{ padding: "7px 10px", fontSize: "13px" }}
+                    />
+                  </div>
+
+                  {/* Clear */}
+                  <button
+                    className="btn-secondary"
+                    onClick={() => { setAdminSelectedUser("all"); setDateFrom(""); setDateTo(""); }}
+                    style={{ alignSelf: "flex-end", padding: "7px 14px", fontSize: "13px" }}
+                  >
+                    Clear ✕
+                  </button>
+
+                  {/* Export */}
+                  <button
+                    onClick={exportAdminFilteredData}
+                    className="btn-success"
+                    style={{ marginLeft: "auto", alignSelf: "flex-end", padding: "7px 16px", fontSize: "13px" }}
+                  >
+                    Export Excel 📊
+                  </button>
+                </div>
+
+                {/* Result count */}
+                <div style={{ fontSize: "12px", opacity: 0.6, marginBottom: "10px" }}>
+                  Showing <strong>{adminFilteredData.length}</strong> record{adminFilteredData.length !== 1 ? "s" : ""}
+                  {adminSelectedUser !== "all" && <> for <strong>{adminSelectedUser}</strong></>}
+                  {dateFrom && <> from <strong>{dateFrom}</strong></>}
+                  {dateTo   && <> to <strong>{dateTo}</strong></>}
+                </div>
+
+                {/* Table */}
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Name</th><th>Date</th><th>Logged In</th>
+                        <th>Logged Out</th><th>Total Hours</th><th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminFilteredData.length > 0
+                        ? adminFilteredData.map((row) => {
+                            const login   = new Date(row.login_time);
+                            const logout  = row.logout_time ? new Date(row.logout_time) : null;
+                            const hours   = logout ? ((logout - login) / 3600000).toFixed(2) : null;
+                            const working = !row.logout_time;
+                            return (
+                              <tr key={row.id}>
+                                <td>{row.name}</td>
+                                <td>{row.date}</td>
+                                <td>{login.toLocaleTimeString()}</td>
+                                <td>{logout ? logout.toLocaleTimeString() : "—"}</td>
+                                <td>{hours ? `${hours}h` : "In Progress"}</td>
+                                <td>
+                                  <span style={{
+                                    padding: "2px 10px", borderRadius: "12px",
+                                    fontSize: "12px", fontWeight: "600",
+                                    background: working ? "#fff3cd" : "#d4edda",
+                                    color:      working ? "#856404" : "#155724",
+                                  }}>
+                                    {working ? "Working" : "Present"}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        : (
+                          <tr>
+                            <td colSpan={6} style={{ textAlign: "center", opacity: 0.5, padding: "20px" }}>
+                              No records found for selected filters
+                            </td>
+                          </tr>
+                        )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ════════════════════════════════
+             SUPER USER VIEW
+            ════════════════════════════════ */}
+        {loggedInUser && isSuperUser && (
+          <>
+            {/* Identity bar */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                🛡️ Logged in as <strong>{loggedInUser}</strong>
+                <span style={{
+                  background: "#6f42c1", color: "#fff",
+                  borderRadius: "4px", padding: "2px 8px", fontSize: "12px",
+                }}>Super User</span>
+              </span>
+              <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
+            </div>
+
+            {/* Currently working strip */}
+            <div className="glossy-container" style={{ marginBottom: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>
+                🟢 Currently Working
+                <span style={{
+                  marginLeft: "10px", background: "#28a745", color: "#fff",
+                  borderRadius: "12px", padding: "2px 10px", fontSize: "13px",
+                }}>{activeSessions.length}</span>
+              </h3>
+              {activeSessions.length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {activeSessions.map((row) => (
+                    <div key={row.id} style={{
+                      display: "flex", alignItems: "center", gap: "8px",
+                      background: "#d4edda", color: "#155724",
+                      borderRadius: "20px", padding: "6px 14px", fontSize: "13px",
+                    }}>
+                      <span>👤 <strong>{row.name}</strong></span>
+                      <span style={{ opacity: 0.7 }}>since {new Date(row.login_time).toLocaleTimeString()}</span>
+                      <button
+                        onClick={() => handleLogout(row.name)}
+                        style={{
+                          background: "none", border: "1px solid #155724",
+                          borderRadius: "10px", padding: "1px 8px",
+                          cursor: "pointer", fontSize: "11px", color: "#155724",
+                        }}
+                      >
+                        Clock Out
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ margin: 0, opacity: 0.5 }}>No one is currently clocked in.</p>
+              )}
+            </div>
+
+            {/* All users table */}
+            <div className="glossy-container">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <h3 style={{ margin: 0 }}>📋 All Users — Attendance Report</h3>
+                <button onClick={exportAllData} className="btn-secondary">Export All Data 📊</button>
+              </div>
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th><th>Date</th><th>Login Time</th>
+                      <th>Logout Time</th><th>Total Hours</th><th>Status</th><th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allUsersData.length > 0
+                      ? allUsersData.map((row) => {
+                          const login   = new Date(row.login_time);
+                          const logout  = row.logout_time ? new Date(row.logout_time) : null;
+                          const hours   = logout ? ((logout - login) / 3600000).toFixed(2) : null;
+                          const working = !row.logout_time;
+                          return (
+                            <tr key={row.id}>
+                              <td>{row.name}</td>
+                              <td>{row.date}</td>
+                              <td>{login.toLocaleTimeString()}</td>
+                              <td>{logout ? logout.toLocaleTimeString() : "—"}</td>
+                              <td>{hours ? `${hours}h` : "In Progress"}</td>
+                              <td>
+                                <span style={{
+                                  padding: "2px 10px", borderRadius: "12px",
+                                  fontSize: "12px", fontWeight: "600",
+                                  background: working ? "#fff3cd" : "#d4edda",
+                                  color:      working ? "#856404" : "#155724",
+                                }}>
+                                  {working ? "Working" : "Present"}
+                                </span>
+                              </td>
+                              <td>
+                                {working && (
+                                  <button className="btn-secondary" onClick={() => handleLogout(row.name)}>
+                                    Clock Out
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      : (
+                        <tr>
+                          <td colSpan={7} style={{ textAlign: "center", opacity: 0.5 }}>No records found</td>
+                        </tr>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
       </div>
     </div>
   );
